@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content=""/>
+    <meta name="author" content="" />
+    <link rel="icon" href="favicon.ico" />
+    <title>REIMAGINE</title>    
+    <link href="css/styles.css" rel="stylesheet">
+	<style>
+	.triangle-left {
+		width: 0;
+		position: absolute;
+		top: 50%;
+		height: 0;
+		right: 0;
+		border-top: 100px solid transparent;
+		border-right: 100px solid #ccc;
+		border-bottom: 100px solid transparent;
+		margin-top: -85px;
+	}
+.triangle-right {
+    width: 0;
+		position: absolute;
+		top: 50%;
+		height: 0;
+		left: 0;
+		border-top: 100px solid transparent;
+		border-left: 100px solid #ccc;
+		border-bottom: 100px solid transparent;
+		margin-top: -85px;
+}
+	.box.valuemap{
+		padding:20px;
+	}
+	.box.valuemap .font-weight-bold{
+		font-size:12px;
+	}
+	.valuemap .col.col3
+	{
+		position:relative;
+	}
+	.valuemap .col .circle
+	{
+		z-index:1;
+		background-color: #5addbe;
+		margin-top: -54px;
+		width: 140px;
+		height: 140px;
+		position: absolute;
+		top: 50%;
+		padding-top: 10px;
+		left: 50%;
+		margin-left: -69px;
+		display:table;
+	}
+	.valuemap .col .square
+	{
+		background-color: #333132;
+	}
+	.valuemap .col .square .text
+	{
+		color:#fff;
+	}
+	.valuemap .col .circle .text
+	{
+		color: #333132;
+	}
+	.col .square span.leftcircle
+	{
+		left:-10px;
+	}
+	.square span.red
+	{
+		background-color:#F15944;
+		color:#fff;
+	}
+	.col .square span.rightcircle
+	{
+		right:-10px;
+	}
+	.square span.skyblue
+	{
+		background-color:#5addbe;
+		color:#333132;
+	}
+	.circle>div{
+		display:table-cell;
+		vertical-align: middle;
+	}
+	.circle>div p{
+		margin-bottom:0px;
+	}
+	</style>
+  </head>
+  <body id='page'>
+	<nav class="navbar container">
+		
+		  <a class="navbar-brand" href="#"><img src='images/logo.png' alt='logo'></a>
+		  <form class="form-inline" action='addcontact.html'>
+			<i class="fa fa-search"></i>
+			<input class="form-control mr-3 px-4" type="text" placeholder="Search" aria-label="Search">
+			<button class="btn my-2 my-sm-0 px-3" type="submit"><i class="fa fa-plus"></i> Add Contact</button>
+		  </form>
+		
+    </nav>
+    <div class="container" id='maincontainer'>
+      <div class="row">
+        <nav class="left">
+		  <div class='profileinfo'>			
+			<div class='image'><img src='images/logo.png' alt='' height='100' /></div>
+			<p><a href='settings.html'>User Name</a></p>
+		  </div>
+          <div class="sidebar-sticky text-center">
+            <ul class="nav flex-column">
+              <li class="nav-item active">
+                <a class="nav-link " href="#">
+                 <i class="fa fa-user"></i>Contacts
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="findincontact.html">
+                  <i class="fa fa-user"></i>To Do's
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="todoactions.html">
+                  <i class="fa fa-gear"></i>Settings
+                </a>
+              </li>              
+            </ul>
+          </div>
+		  <div class='valuemapselect col-12'>
+			  <div class='row'>
+					<div class='col col1'>
+						
+						<div class='square'>
+						
+						</div>
+						<div class='square'>
+						
+						</div>
+						<div class='square'>
+						
+						</div>
+						
+					</div>
+					<div class='col col2'>
+						
+						<div class='square selected'>
+						</div>
+						<div class='square'>
+						
+						</div>
+						<div class='square'>
+						
+						</div>
+					</div>
+					<div class='col col3 text-center'>
+						
+						<div class='circle selected'>
+						</div>
+						<div class='circle selected '>
+						</div>
+						<div class='circle '>
+						</div>
+					</div>
+					<div class='col col4'>
+						
+						<div class='square'>
+						</div>
+						<div class='square'>
+						
+						</div>
+						<div class='square'>
+						
+						</div>
+					</div>
+					<div class='col col5 '>
+						
+						<div class='square selected'>
+						</div>
+						<div class='square'>
+						
+						</div>
+						<div class='square'>
+						
+						</div>
+					</div>
+				</div>
+				<p>2 of 12 <br/> Answers Completed</p>
+		  </div>
+        </nav>
+        <div  class="right" id='maincontent'>
+			<ul class='arrow-steps clearfix'>
+				<li class='step'>
+					<a href='overview.html'><span>Overview</span></a>
+				</li>
+				<li class='step active'>
+					<a href='valuemap.html'><span><span class='first'>Step1</span>
+					<span>View/Create<br/>Value Map</span></span></a>
+				</li>
+				<li  class='step'>
+					<a href='overview.html'><span><span class='first'>Step1</span>
+					<span>View/Create<br/>Value Map</span></span></a>
+				</li>
+				<li  class='step'>
+					<a href='overview.html'><span><span class='first'>Step1 </span>
+					<span>View/Create<br/>Value Map</span></span></a>
+				</li>
+			</ul>
+			<div class='row'>
+				<div class='col-7'>
+					<h2>Sam Smith</h2>
+				</div>
+				<div class='col-5'>
+					<div class='clearfix'>
+						<button class="btn float-right " type="button">Edit Value Map</button>							
+					</div>					
+				</div>
+				<div class='col-12'>
+				<p>What 3 things are most important to you in new place to live?</p>
+				</div>
+			</div>
+			<div class='col-12 valuemap box'>
+				<div class='row'>
+					<div class='col col1'>
+						<p class='text-center red font-weight-bold text-uppercase'>Current Impacts</p>
+						<div class='square'>
+							<div class='text'>
+								<p>Hard to do <br/>Markup</p>
+								<p>Hard to do <br/>Markup</p>
+								<p>Hard to do <br/>Markup</p>
+							</div>
+							<span class='leftcircle red'>7</span>
+						</div>						
+					</div>
+					<div class='col col2'>
+						<p class='text-center  red font-weight-bold text-uppercase'>Current Description</p>
+						<div class='square'>
+							<div class='text'>
+								<p><br/></p>
+								<p><br/></p>
+								<p>Hard to do <br/>Markup</p>
+							</div>
+							<span class='leftcircle red'>7</span>
+						</div>
+				
+					</div>
+					<div class='col col3 text-center'>
+					<div class="triangle-right"></div>					
+					<div class='circle '>
+					<div>
+						<p class='font-weight-bold'>PRIORITY 1</p>
+						<h3>Location</h3>
+						</div>
+						</div>
+					<div class="triangle-left"></div>
+					</div>
+					<div class='col col4'>
+						<p class='text-center skyblue font-weight-bold text-uppercase'>Future Description</p>
+						<div class='square'>
+							<span class='rightcircle skyblue'>7</span>
+						</div>
+						
+					</div>
+					<div class='col col5 '>
+						<p class='text-center skyblue font-weight-bold text-uppercase'>Future Impacts</p>
+						<div class='square'>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+			<div class='col-12 valuemap box'>
+				<div class='row'>
+					<div class='col col1'>
+						<p class='text-center'>Current Impacts</p>
+						<div class='square'>
+							<div class='text'>
+								<p>Hard to do <br/>Markup</p>
+								<p>Hard to do <br/>Markup</p>
+								<p>Hard to do <br/>Markup</p>
+							</div>
+						
+						</div>						
+					</div>
+					<div class='col col2'>
+						<p class='text-center'>Current Description</p>
+						<div class='square '>
+							<div class='text'>
+								<p><br/></p>
+								<p><br/></p>
+								<p>Hard to do <br/>Markup</p>
+							</div>
+						</div>
+				
+					</div>
+					<div class='col col3 text-center'>						
+						<div class="triangle-right"></div>					
+					<div class='circle '>
+					<div>
+						<p class='font-weight-bold'>PRIORITY 1</p>
+						<h3>Location</h3>
+						</div>
+						</div>
+					<div class="triangle-left"></div>
+					
+					</div>
+					<div class='col col4'>
+						<p class='text-center'>Future Description</p>
+						<div class='square'>
+							<span class='rightcircle skyblue'>7</span>
+						</div>
+						
+					</div>
+					<div class='col col5 '>
+						<p class='text-center'>Future Impacts</p>
+						<div class='square'>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+						</div>
+      </div>
+    </div>
+    <script src="js/jquery-3.2.1.slim.min.js" ></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/reimagine.js"></script>
+  </body>
+</html>

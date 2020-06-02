@@ -1,0 +1,962 @@
+﻿Imports RickProject.Business
+Imports RickProject.DB
+Public Class ValueMapOCustomerNew
+    Inherits System.Web.UI.Page
+    Public Shared UserLoginID As Integer
+    Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        'If String.IsNullOrEmpty(Config.LoginUserType) Then
+        '    Response.Redirect("~/Login.aspx")
+        'End If
+        Dim rawURL As String = HttpContext.Current.Request.Url.AbsoluteUri
+        If rawURL.ToLower().Contains("reimaginesellinglogin.com") Then
+            DataBase.InstanceName = "production"
+        Else
+            DataBase.InstanceName = "test"
+        End If
+        Dim PriorityChoicesTable As New DataTable
+        If Not Page.IsPostBack Then
+            Dim customerId As Integer = Request.QueryString("cid")
+            Dim userId As Integer = Request.QueryString("uid")
+            UserLoginID = userId
+            hidCustId.Value = customerId
+
+            If Not Request.QueryString("realtor") Is Nothing Then
+                hidUserMode.Value = "1"
+            Else
+                hidUserMode.Value = "0"
+            End If
+            aOverView.HRef = "Overview.aspx?cid=" & Request.QueryString("cid")
+            aCreateValueMap.HRef = "ValueMap.aspx?cid=" & Request.QueryString("cid")
+            aCreateProperty.HRef = "AddProperty.aspx?cid=" & Request.QueryString("cid")
+            aCompareDecide.HRef = "CompareDecide.aspx?cid=" & Request.QueryString("cid")
+            If LoadAllPropertyEvaluation(Request.QueryString("cid")) = 0 Then
+                aCompareDecide.Disabled = True
+                aCompareDecide.HRef = ""
+                aCompareDecide.Style.Add("color", "lightgray")
+                aCompareDecide.Style.Add("cursor", "text")
+            End If
+            Dim objCustomerProcessor As New CustomerProcessor()
+            Dim dt, dt1 As New DataTable()
+            Dim ds As New DataSet()
+            objCustomerProcessor.GetContactInfoByUser(userId, customerId, dt1)
+            lblCustomerName.InnerText = dt1.Rows(0)("FirstName") & " " & dt1.Rows(0)("LastName")
+            Dim primaryEmailId As String = Convert.ToString(dt1.Rows(0)("EmailId"))
+            Dim secondaryEmailId As String = Convert.ToString(dt1.Rows(0)("SecondaryEmailId"))
+            If String.IsNullOrEmpty(primaryEmailId) Then
+                lblUserEmail.InnerText = secondaryEmailId.Trim()
+            Else
+                lblUserEmail.InnerText = primaryEmailId.Trim()
+            End If
+            If Not String.IsNullOrEmpty(lblUserEmail.InnerText.Trim()) Then
+                Dim userEmail As String = lblUserEmail.InnerText.Trim()
+                Dim emailPrefix As String = userEmail.Split("@")(0)
+                Dim emailSuffix As String = userEmail.Split("@")(1)
+                Dim replaceChars As String = String.Empty
+                For i As Integer = 0 To emailPrefix.Length - 3
+                    replaceChars = replaceChars & "*"
+                Next
+                lblUserEmail.InnerText = emailPrefix.Remove(1, emailPrefix.Length - 2).Insert(1, replaceChars) & "@" & emailSuffix
+                hidUserEmail.Value = userEmail.ToLower
+            End If
+            GetPrioritySelection(customerId, ds)
+            GetAllPriorityChoices(customerId, dt)
+            If ds.Tables(0).Rows.Count = 0 Then
+                divPriorityOverView.Style.Add("display", "none")
+                divEditPriority.Style.Add("display", "none")
+                hidCustomerPriority.Value = "new"
+            Else
+                divPriorityOverView.Style.Add("display", "none")
+                divEditPriority.Style.Add("display", "none")
+                hidCustomerPriority.Value = "old"
+                Dim PriorityTable As DataTable = ds.Tables(0)
+                PriorityChoicesTable = ds.Tables(1)
+
+                lblPriority1Content.InnerText = PriorityTable.Rows(0)("PriorityName")
+                lblPriority1Content.Attributes.Add("priorityId", PriorityTable.Rows(0)("PriorityID"))
+                lblPriority2Content.InnerText = PriorityTable.Rows(1)("PriorityName")
+                lblPriority2Content.Attributes.Add("priorityId", PriorityTable.Rows(1)("PriorityID"))
+                lblPriority3Content.InnerText = PriorityTable.Rows(2)("PriorityName")
+                lblPriority3Content.Attributes.Add("priorityId", PriorityTable.Rows(2)("PriorityID"))
+                For i As Integer = 0 To PriorityTable.Rows.Count - 1
+                    Dim priorityId As Integer = PriorityTable.Rows(i)("PriorityID")
+                    Dim priorityName As String = PriorityTable.Rows(i)("PriorityName")
+                    Dim impactresult() As DataRow = PriorityChoicesTable.Select("PriorityID =" & priorityId & " And QuestionTypeID = 1")
+                    Dim objPriorityProcessor As New PriorityProcessor()
+                    Dim dtImpactScore As New DataTable()
+                    objPriorityProcessor.GetValueMapScore(hidCustId.Value, 1, priorityId, dtImpactScore)
+                    Dim impactScore As Integer = 0
+                    If dtImpactScore.Rows.Count > 0 Then
+                        impactScore = dtImpactScore.Rows(0)("Score")
+                    End If
+                    Dim impactContent As New StringBuilder()
+                    For Each row In impactresult
+                        impactContent.Append("<p>" & row(3) & "</p>")
+                    Next
+                    If (i = 0) Then
+                        divPriority1Impacts.InnerHtml = impactContent.ToString()
+                        divPriority1Impacts.Attributes.Add("priorityid", priorityId)
+                        divPriority1Impacts.Attributes.Add("priorityname", priorityName)
+                        If impactScore > 0 Then
+                            lblImpactsScore1.InnerText = impactScore
+                            lblImpactsScore1.Style.Add("display", "")
+                        End If
+                    ElseIf i = 1 Then
+                        divPriority2Impacts.InnerHtml = impactContent.ToString()
+                        divPriority2Impacts.Attributes.Add("priorityid", priorityId)
+                        divPriority2Impacts.Attributes.Add("priorityname", priorityName)
+                        If impactScore > 0 Then
+                            lblImpactsScore2.InnerText = impactScore
+                            lblImpactsScore2.Style.Add("display", "")
+                        End If
+                    ElseIf i = 2 Then
+                        divPriority3Impacts.InnerHtml = impactContent.ToString()
+                        divPriority3Impacts.Attributes.Add("priorityid", priorityId)
+                        divPriority3Impacts.Attributes.Add("priorityname", priorityName)
+                        If impactScore > 0 Then
+                            lblImpactsScore3.InnerText = impactScore
+                            lblImpactsScore3.Style.Add("display", "")
+                        End If
+                    End If
+
+
+                    Dim csresult() As DataRow = PriorityChoicesTable.Select("PriorityID =" & priorityId & " And QuestionTypeID = 2")
+                    Dim csContent As New StringBuilder()
+                    For Each row In csresult
+                        csContent.Append("<p>" & row(3) & "</p>")
+                    Next
+                    If (i = 0) Then
+                        divPriority1CSDesc.InnerHtml = csContent.ToString()
+                        divPriority1CSDesc.Attributes.Add("priorityid", priorityId)
+                        divPriority1CSDesc.Attributes.Add("priorityname", priorityName)
+                    ElseIf i = 1 Then
+                        divPriority2CSDesc.InnerHtml = csContent.ToString()
+                        divPriority2CSDesc.Attributes.Add("priorityid", priorityId)
+                        divPriority2CSDesc.Attributes.Add("priorityname", priorityName)
+                    ElseIf i = 2 Then
+                        divPriority3CSDesc.InnerHtml = csContent.ToString()
+                        divPriority3CSDesc.Attributes.Add("priorityid", priorityId)
+                        divPriority3CSDesc.Attributes.Add("priorityname", priorityName)
+                    End If
+
+                    Dim fsresult() As DataRow = PriorityChoicesTable.Select("PriorityID =" & priorityId & " And QuestionTypeID = 3")
+                    Dim fsContent As New StringBuilder()
+                    For Each row In fsresult
+                        fsContent.Append("<p>" & row(3) & "</p>")
+                    Next
+                    If (i = 0) Then
+                        divPriority1FSDesc.InnerHtml = fsContent.ToString()
+                        divPriority1FSDesc.Attributes.Add("priorityid", priorityId)
+                        divPriority1FSDesc.Attributes.Add("priorityname", priorityName)
+                    ElseIf i = 1 Then
+                        divPriority2FSDesc.InnerHtml = fsContent.ToString()
+                        divPriority2FSDesc.Attributes.Add("priorityid", priorityId)
+                        divPriority2FSDesc.Attributes.Add("priorityname", priorityName)
+                    ElseIf i = 2 Then
+                        divPriority3FSDesc.InnerHtml = fsContent.ToString()
+                        divPriority3FSDesc.Attributes.Add("priorityid", priorityId)
+                        divPriority3FSDesc.Attributes.Add("priorityname", priorityName)
+                    End If
+
+                    Dim benefitresult() As DataRow = PriorityChoicesTable.Select("PriorityID =" & priorityId & " And QuestionTypeID = 4")
+                    Dim benefitContent As New StringBuilder()
+                    For Each row In benefitresult
+                        benefitContent.Append("<p>" & row(3) & "</p>")
+                    Next
+                    Dim dtBenefitScore As New DataTable()
+                    objPriorityProcessor.GetValueMapScore(hidCustId.Value, 4, priorityId, dtBenefitScore)
+                    Dim benefitScore As Integer = 0
+                    If dtBenefitScore.Rows.Count > 0 Then
+                        benefitScore = dtBenefitScore.Rows(0)("Score")
+                    End If
+                    If (i = 0) Then
+                        divPriority1FSBenefits.InnerHtml = benefitContent.ToString()
+                        divPriority1FSBenefits.Attributes.Add("priorityid", priorityId)
+                        divPriority1FSBenefits.Attributes.Add("priorityname", priorityName)
+                        If benefitScore > 0 Then
+                            lblBenefitScore1.InnerText = benefitScore
+                            lblBenefitScore1.Style.Add("display", "")
+                        End If
+                    ElseIf i = 1 Then
+                        divPriority2FSBenefits.InnerHtml = benefitContent.ToString()
+                        divPriority2FSBenefits.Attributes.Add("priorityid", priorityId)
+                        divPriority2FSBenefits.Attributes.Add("priorityname", priorityName)
+                        If benefitScore > 0 Then
+                            lblBenefitScore2.InnerText = benefitScore
+                            lblBenefitScore2.Style.Add("display", "")
+                        End If
+
+                    ElseIf i = 2 Then
+                        divPriority3FSBenefits.InnerHtml = benefitContent.ToString()
+                        divPriority3FSBenefits.Attributes.Add("priorityid", priorityId)
+                        divPriority3FSBenefits.Attributes.Add("priorityname", priorityName)
+                        If benefitScore > 0 Then
+                            lblBenefitScore3.InnerText = benefitScore
+                            lblBenefitScore3.Style.Add("display", "")
+                        End If
+                    End If
+                Next
+
+            End If
+
+
+            'GetCSFuture(customerId, 3, 19, 1, dt)
+            'GetCSFutureChoice(customerId, 3, 19, 1, dt)
+            'GetCSCurrentChoice(customerId, 3, 19, 1, dt)
+            'Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(customerId, 1, 19, 1)
+            'If ShowCurrentOrFuture > 0 Then
+            '    GetFSImpactChoice(customerId, 1, 19, 1, dt)
+            'ElseIf ShowCurrentOrFuture < 0 Then
+            '    GetCSImpactChoice(customerId, 1, 19, 1, dt)
+            'ElseIf ShowCurrentOrFuture = 0 Then
+            '    GetCSImpactChoice(customerId, 1, 19, 1, dt)
+            '    GetCSBenefitChoice(customerId, 4, 19, 1, dt)
+            'End If
+            BindPropertyEvaluationStatus(hidCustId.Value)
+            Dim valueMapStatus As String = CheckValueMapStatusByCustomer(hidCustId.Value)
+            GetPriorityQuestionDisplayByCustomer(hidCustId.Value)
+            'If hidValueMapStatus.Value = "new" And PriorityChoicesTable.Rows.Count > 0 Then
+            '    Session("valueMapMode") = "VMO"
+            '    Page.ClientScript.RegisterStartupScript(Me.GetType(), "redirectPage", "redirectValueMap();", True)
+            'End If
+            If Not String.IsNullOrEmpty(valueMapStatus) Then
+                If valueMapStatus.ToLower() = "completed" And String.IsNullOrEmpty(Request.QueryString("realtor")) Then
+                    hidCustomerPriority.Value = "completed"
+                    Dim userInfo As String = GetUserProfileInfo(Request.QueryString("uid"))
+                    pUserName.InnerText = userInfo
+                    divCompleted.Style.Add("display", "")
+                    divPriorityOverView.Style.Add("display", "none")
+                    divEditPriority.Style.Add("display", "none")
+                    divVerifyEmail.Style.Add("display", "none")
+
+                End If
+            End If
+
+        End If
+
+    End Sub
+    Public Sub GetPriorityChoices(ByVal customerID As Integer, ByVal dt As DataTable)
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetPriorityChoicesByCustomer(customerID, dt)
+        divPriorities.InnerHtml = ""
+        Dim priorityHtml As New StringBuilder()
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-6 btns'>").Append("<button type='button' rank='-1' class='btn-default' id='" & dt.Rows(i)("PriorityId") & "'>" & dt.Rows(i)("PriorityName") & "</button>").Append("</div>")
+        Next
+        divPriorities.InnerHtml = priorityHtml.ToString()
+    End Sub
+    Public Sub GetAllPriorityChoices(ByVal customerID As Integer, ByVal dt As DataTable)
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetAllPriorityChoicesByCustomer(customerID, dt)
+        divPriorities.InnerHtml = ""
+        Dim dataset As New DataSet()
+        objPriorityProcessor.GetPrioritySelectionByCustomer(customerID, dataset)
+        Dim priorityHtml As New StringBuilder()
+        If dataset.Tables(0).Rows.Count = 0 Then
+            For i As Integer = 0 To dt.Rows.Count - 1
+                priorityHtml.Append("<div class='col-md-6 btns'>").Append("<button type='button'  rank='-1' class='btn-default' id='" & dt.Rows(i)("PriorityId") & "'>" & dt.Rows(i)("PriorityName") & "</button>").Append("</div>")
+            Next
+        Else
+            Dim list As New List(Of Integer)
+            For j As Integer = 0 To dataset.Tables(0).Rows.Count - 1
+                list.Add(dataset.Tables(0).Rows(j)("PriorityId"))
+                hidSelectedPriorities.Value = hidSelectedPriorities.Value & dataset.Tables(0).Rows(j)("PriorityId") & "~"
+            Next
+            For i As Integer = 0 To dt.Rows.Count - 1
+                list.FindIndex(Function(a) a = dt.Rows(i)("PriorityId"))
+                If list.Contains(dt.Rows(i)("PriorityId")) Then
+                    priorityHtml.Append("<div class='col-md-6 btns'>").Append("<button type='button'  rank='" & (list.FindIndex(Function(a) a = dt.Rows(i)("PriorityId")) + 1) & "' class='btn-default active' id='" & dt.Rows(i)("PriorityId") & "'>" & dt.Rows(i)("PriorityName") & "</button>").Append("</div>")
+                Else
+                    priorityHtml.Append("<div class='col-md-6 btns'>").Append("<button type='button'  rank='-1' class='btn-default' id='" & dt.Rows(i)("PriorityId") & "'>" & dt.Rows(i)("PriorityName") & "</button>").Append("</div>")
+                End If
+
+            Next
+        End If
+
+        divPriorities.InnerHtml = priorityHtml.ToString()
+    End Sub
+
+    Public Sub GetPrioritySelection(ByVal customerID As Integer, ByRef ds As DataSet)
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetPrioritySelectionByCustomer(customerID, ds)
+
+    End Sub
+    Public Sub GetCSFuture(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable)
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSFutureChoices(customerID, questionType, priorityID, VMType, dt)
+        divFuture.InnerHtml = ""
+        Dim priorityHtml As New StringBuilder()
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        Next
+        divFuture.InnerHtml = priorityHtml.ToString()
+    End Sub
+    Public Shared Function GetCSFutureChoice(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSFutureChoices(customerID, questionType, priorityID, VMType, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        'If dt.Rows.Count > 0 Then
+        dt.Rows.Add("Other", questionType, priorityID)
+        ' End If
+        For i As Integer = 0 To dt.Rows.Count - 1
+            If i Mod 2 = 0 Then
+                priorityHtml.Append("<div class='btns'>").Append("<button type='button' style='' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>")
+            Else
+                priorityHtml.Append("<button type='button' style='' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+            End If
+
+        Next
+        Return priorityHtml.ToString()
+    End Function
+    Public Shared Function GetCSCurrentChoice(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSCurrentChoices(customerID, questionType, priorityID, VMType, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        'If dt.Rows.Count > 0 Then
+        dt.Rows.Add("Other", questionType, priorityID)
+        'End If
+        For i As Integer = 0 To dt.Rows.Count - 1
+            If i Mod 2 = 0 Then
+                priorityHtml.Append("<div class='btns'>").Append("<button type='button' class='btn-default' style='' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>")
+            Else
+                priorityHtml.Append("<button type='button' class='btn-default' style='' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>").Append("</div>")
+
+            End If
+
+        Next
+        Return priorityHtml.ToString()
+    End Function
+    Public Shared Function GetCustomerWWDCD(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer) As Integer
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Return objPriorityProcessor.GetCustomerWWDCD(customerID, questionType, priorityID, VMType)
+    End Function
+    Public Shared Function GetCSImpactChoice(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSCurrentChoices(customerID, questionType, priorityID, VMType, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        dt.Rows.Add("Other", questionType, priorityID)
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-4 btns'>").Append("<button future='0' type='button' class='btn-default' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>").Append("</div>")
+        Next
+        Return priorityHtml.ToString()
+    End Function
+    Public Shared Function GetFSImpactChoice(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSFutureChoices(customerID, questionType, priorityID, VMType, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        dt.Rows.Add("Other", questionType, priorityID)
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-4 btns'>").Append("<button future='1' type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        Next
+        Return priorityHtml.ToString()
+    End Function
+    Public Shared Function GetCSBenefitChoice(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSFutureChoices(customerID, questionType, priorityID, VMType, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        'If dt.Rows.Count > 0 Then
+        dt.Rows.Add("Other", questionType, priorityID)
+        'End If
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-4 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        Next
+        Return priorityHtml.ToString()
+    End Function
+
+    <System.Web.Services.WebMethod()> Public Shared Function InsertCustomerPriorityChoices(ByVal CustId As String, ByVal Priority As String) As String
+        ' Return ""
+        Dim result As Integer = 0
+        Dim PriorityList As String() = Priority.TrimEnd("!").Split("!")
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim PriorityIds As String = String.Empty
+        For i As Integer = 0 To PriorityList.Length - 1
+            PriorityIds &= PriorityList(i).Split("~")(0) & ","
+        Next
+        objPriorityProcessor.DeleteCustomerPriorityChoices(CustId, PriorityIds.TrimEnd(",").Replace("!", ","))
+        UserProcessor.InsertUserActivity("Value Map", "Started for", CustId, UserLoginID)
+        For i As Integer = 0 To PriorityList.Length - 1
+            Dim PriorityId As String = PriorityList(i).Split("~")(0)
+            result = objPriorityProcessor.InsertCustomerPriorityChoices(CustId, PriorityId, i + 1)
+        Next
+        If result > 0 Then
+            Return "success"
+        Else
+            Return "fail"
+        End If
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function UpdateCustomerPriorityChoiceRank(ByVal CustId As String, ByVal Priority As String) As String
+        ' Return ""
+        Dim result As Integer = 0
+        Dim PriorityList As String() = Priority.TrimEnd("!").Split("!")
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim initialPriorityId = PriorityList(0).Split("~")(0)
+        For i As Integer = 0 To PriorityList.Length - 1
+            Dim PriorityId As String = PriorityList(i).Split("~")(0)
+            result = objPriorityProcessor.UpdateCustomerPriorityRank(CustId, PriorityId, (i + 1))
+        Next
+        Dim dt As New DataTable()
+        objPriorityProcessor.GetCSFutureChoices(CustId, 3, initialPriorityId, 2, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        Next
+        Dim rowCount As Integer = dt.Rows.Count
+        'If rowCount > 0 Then
+        'If rowCount Mod 4 = 0 Then
+        '    priorityHtml.Append("<div class='col-md-3></div><div class='col-md-3></div><div class='col-md-3></div><div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='btnOther'>" & "Other" & "</button>").Append("</div>")
+        'Else
+        priorityHtml.Append("<div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='" & "btnOther" & "'>" & "Other" & "</button>").Append("</div>")
+        'End If
+        'End If
+        Return priorityHtml.ToString()
+        'If result > 0 Then
+        '    Return "success"
+        'Else
+        '    Return "fail"
+        'End If
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function InsertCustomerPriorityChoiceDetails(ByVal CustId As String, ByVal PriorityId As String, ByVal QuestionTypeId As String, ByVal Answer As String, ByVal WWDC As Integer) As String
+        ' Return ""
+        Dim result As Integer = 0
+        Dim objUserProcessor As New UserProcessor()
+
+
+        Dim userId As Integer = UserLoginID
+
+        Dim dtUser As New DataTable
+        objUserProcessor.GetUserProfileInfo(userId, dtUser)
+        Dim AnswerList As String() = HttpUtility.UrlDecode(Answer).Replace("~", """").TrimEnd("!").Split("!")
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.DeleteCustomerPriorityChoiceDetails(CustId, PriorityId, QuestionTypeId, HttpUtility.UrlDecode(Answer).Replace("~", """").Replace("!", ",").TrimEnd(","))
+        For i As Integer = 0 To AnswerList.Length - 1
+            Dim AnswerData As String = AnswerList(i)
+            result = objPriorityProcessor.InsertCustomerPriorityChoiceDetails(CustId, PriorityId, QuestionTypeId, AnswerData.Trim(), WWDC)
+        Next
+        Dim objCustomerProcessor As New CustomerProcessor()
+        Dim dtCustomer As New DataTable
+        objCustomerProcessor.GetContactInfoByUser(userId, CustId, dtCustomer)
+
+        Dim vmstatus As String = Convert.ToString(dtCustomer.Rows(0)("VMCustomerStatus"))
+        If vmstatus.ToLower() = "completed" Then
+            Dim result1 As Integer = 0
+            Dim objToDoProcessor As New ToDoProcessor()
+            Dim description As String = System.IO.File.ReadAllText(HttpContext.Current.Server.MapPath("~/CustomFiles/Evaluate.html"))
+            description = description.Replace("$CustomerFirstName$", dtCustomer.Rows(0)("firstName"))
+            description = description.Replace("$UserName$", Convert.ToString(dtUser.Rows(0)("UserName")))
+            result1 = objToDoProcessor.InsertToDoDetails("Send Evaluation Letter", description, DateTime.Now, 1, userId, CustId)
+            If result1 > 0 Then
+                UserProcessor.InsertUserActivity("To Do", "was created for ", result1, userId)
+            End If
+
+        End If
+        If result > 0 Then
+            Return "success"
+        Else
+            Return "fail"
+        End If
+
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerPriorityCurrent(ByVal CustId As String, ByVal PriorityId As String, ByVal QuestionTypeId As String) As String
+        ' Return ""
+        Dim result As String = ""
+        Dim dt As New DataTable()
+        Dim objPriorityProcessor As New PriorityProcessor()
+        result = GetCSCurrentChoice(CustId, QuestionTypeId, PriorityId, 2, dt)
+        result += "~" + GetCSFutureChoice(CustId, QuestionTypeId, PriorityId, 2, dt)
+        Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(CustId, QuestionTypeId, PriorityId, 2)
+        result += "~" + Convert.ToString(ShowCurrentOrFuture)
+        'Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(CustId, QuestionTypeId, PriorityId, 1)
+        'If ShowCurrentOrFuture > 0 Then
+        '    result = GetFSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        'ElseIf ShowCurrentOrFuture < 0 Then
+        '    result = GetCSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        'ElseIf ShowCurrentOrFuture = 0 Then
+        '    result = GetCSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        '    result += "~" + GetCSBenefitChoice(CustId, 4, PriorityId, 1, dt)
+        'End If
+        Return result
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerPriorityImpact(ByVal CustId As String, ByVal PriorityId As String, ByVal QuestionTypeId As String) As String
+        ' Return ""
+        Dim result As String = ""
+        Dim dt As New DataTable()
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(CustId, 2, PriorityId, 2)
+        'result = GetCSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        If ShowCurrentOrFuture > 0 Then
+            result = GetFSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        ElseIf ShowCurrentOrFuture < 0 Then
+            result = GetCSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        ElseIf ShowCurrentOrFuture = 0 Then
+            result = GetCSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+            '    ' result += "~" + GetCSBenefitChoice(CustId, 4, PriorityId, 1, dt)
+        End If
+        result += "~" + Convert.ToString(ShowCurrentOrFuture)
+        Return result
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerPriorityBenefit(ByVal CustId As String, ByVal PriorityId As String, ByVal QuestionTypeId As String) As String
+        ' Return ""
+        Dim result As String = ""
+        Dim dt As New DataTable()
+        Dim objPriorityProcessor As New PriorityProcessor()
+        result = GetCSBenefitChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        Return result
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerFuture(ByVal CustId As String, ByVal PriorityId As String) As String
+        ' Return ""
+        Dim result As Integer = 0
+        'Dim PriorityList As String() = Priority.TrimEnd("!").Split("!")
+        Dim objPriorityProcessor As New PriorityProcessor()
+        'Dim initialPriorityId = PriorityList(0).Split("~")(0)
+        'For i As Integer = 0 To PriorityList.Length - 1
+        '    Dim PriorityId As String = PriorityList(i).Split("~")(0)
+        '    'result = objPriorityProcessor.UpdateCustomerPriorityRank(CustId, PriorityId, (i + 1))
+        'Next
+        Dim dt As New DataTable()
+        objPriorityProcessor.GetCSFutureChoices(CustId, 3, PriorityId, 2, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        'If dt.Rows.Count > 0 Then
+        dt.Rows.Add("Other", "3", PriorityId)
+        'End If
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        Next
+        Return priorityHtml.ToString()
+        'If result > 0 Then
+        '    Return "success"
+        'Else
+        '    Return "fail"
+        'End If
+    End Function
+
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerFutureEdit(ByVal CustId As String, ByVal PriorityId As String) As String
+        ' Return ""
+        Dim result As Integer = 0
+        'Dim PriorityList As String() = Priority.TrimEnd("!").Split("!")
+        Dim objPriorityProcessor As New PriorityProcessor()
+        'Dim initialPriorityId = PriorityList(0).Split("~")(0)
+        'For i As Integer = 0 To PriorityList.Length - 1
+        '    Dim PriorityId As String = PriorityList(i).Split("~")(0)
+        '    'result = objPriorityProcessor.UpdateCustomerPriorityRank(CustId, PriorityId, (i + 1))
+        'Next
+        Dim dt As New DataTable()
+        objPriorityProcessor.GetCSFutureChoicesEdit(CustId, 3, PriorityId, 2, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        'If dt.Rows.Count > 0 Then
+        dt.Rows.Add("Other", 3, PriorityId)
+        'End If
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+            'If i Mod 2 = 0 Then
+            '    priorityHtml.Append("<div class='btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>")
+            'Else
+            '    priorityHtml.Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+            'End If
+        Next
+        Return priorityHtml.ToString()
+        'If result > 0 Then
+        '    Return "success"
+        'Else
+        '    Return "fail"
+        'End If
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerFutureImpactEdit(ByVal CustId As String, ByVal PriorityId As String) As String
+        ' Return ""
+        Dim result As Integer = 0
+        'Dim PriorityList As String() = Priority.TrimEnd("!").Split("!")
+        Dim objPriorityProcessor As New PriorityProcessor()
+        'Dim initialPriorityId = PriorityList(0).Split("~")(0)
+        'For i As Integer = 0 To PriorityList.Length - 1
+        '    Dim PriorityId As String = PriorityList(i).Split("~")(0)
+        '    'result = objPriorityProcessor.UpdateCustomerPriorityRank(CustId, PriorityId, (i + 1))
+        'Next
+        Dim dt As New DataTable()
+        objPriorityProcessor.GetCSFutureChoices(CustId, 4, PriorityId, 1, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        'If dt.Rows.Count > 0 Then
+        dt.Rows.Add("Other", 4, PriorityId)
+        'End If
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-4 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        Next
+        Return priorityHtml.ToString()
+        'If result > 0 Then
+        '    Return "success"
+        'Else
+        '    Return "fail"
+        'End If
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerCSImpactEdit(ByVal CustId As String, ByVal PriorityId As String) As String
+        ' Return ""
+        'Dim result As Integer = 0
+        ''Dim PriorityList As String() = Priority.TrimEnd("!").Split("!")
+        'Dim objPriorityProcessor As New PriorityProcessor()
+        ''Dim initialPriorityId = PriorityList(0).Split("~")(0)
+        ''For i As Integer = 0 To PriorityList.Length - 1
+        ''    Dim PriorityId As String = PriorityList(i).Split("~")(0)
+        ''    'result = objPriorityProcessor.UpdateCustomerPriorityRank(CustId, PriorityId, (i + 1))
+        ''Next
+        'Dim dt As New DataTable()
+        'objPriorityProcessor.GetCSCurrentChoiceEdit(CustId, 1, PriorityId, 1, dt)
+
+        'Dim priorityHtml As New StringBuilder()
+        'For i As Integer = 0 To dt.Rows.Count - 1
+        '    priorityHtml.Append("<div class='col-md-3'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>").Append("</div>")
+        'Next
+        'Return priorityHtml.ToString()
+        ''If result > 0 Then
+        ''    Return "success"
+        ''Else
+        ''    Return "fail"
+        ''End If
+        'Dim result As String = ""
+        'Dim dt As New DataTable()
+        'Dim objPriorityProcessor As New PriorityProcessor()
+        'Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(CustId, 1, PriorityId, 1)
+        'If ShowCurrentOrFuture > 0 Then
+        '    objPriorityProcessor.GetCSFutureChoicesEdit(CustId, 3, PriorityId, 1, dt)
+
+        '    Dim priorityHtml As New StringBuilder()
+        '    For i As Integer = 0 To dt.Rows.Count - 1
+        '        priorityHtml.Append("<div class='col-md-4 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        '    Next
+        '    Return priorityHtml.ToString()
+        'ElseIf ShowCurrentOrFuture < 0 Then
+
+        '    objPriorityProcessor.GetCSCurrentChoiceEdit(CustId, 1, PriorityId, 1, dt)
+        '    Dim priorityHtml As New StringBuilder()
+        '    For i As Integer = 0 To dt.Rows.Count - 1
+
+        '        priorityHtml.Append("<div class='col-md-4 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button></div>")
+
+        '    Next
+        '    Return priorityHtml.ToString()
+        'ElseIf ShowCurrentOrFuture = 0 Then
+
+        '    objPriorityProcessor.GetCSCurrentChoiceEdit(CustId, 1, PriorityId, 1, dt)
+        '    Dim priorityHtml As New StringBuilder()
+        '    For i As Integer = 0 To dt.Rows.Count - 1
+
+        '        priorityHtml.Append("<div class='col-md-4 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button></div>")
+
+        '    Next
+        '    Return priorityHtml.ToString()
+        '    ' result += "~" + GetCSBenefitChoice(CustId, 4, PriorityId, 1, dt)
+        'End If
+        Dim result As String = ""
+        Dim dt As New DataTable()
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(CustId, 2, PriorityId, 2)
+        If ShowCurrentOrFuture > 0 Then
+            result = GetFSImpactChoice(CustId, 1, PriorityId, 1, dt)
+        ElseIf ShowCurrentOrFuture < 0 Then
+            result = GetCSImpactChoice(CustId, 1, PriorityId, 1, dt)
+        ElseIf ShowCurrentOrFuture = 0 Then
+            result = GetCSImpactChoice(CustId, 1, PriorityId, 1, dt)
+            '    ' result += "~" + GetCSBenefitChoice(CustId, 4, PriorityId, 1, dt)
+        End If
+        ' result = GetCSImpactChoice(CustId, 1, PriorityId, 1, dt)
+        result += "~" + Convert.ToString(ShowCurrentOrFuture)
+        Return result
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerPriorityCurrentEdit(ByVal CustId As String, ByVal PriorityId As String) As String
+        ' Return ""
+        Dim result As String = ""
+        Dim dt As New DataTable()
+        Dim objPriorityProcessor As New PriorityProcessor()
+        result = GetCSCurrentChoice(CustId, 2, PriorityId, 2, dt)
+        result += "~" + GetCSFutureChoice(CustId, 2, PriorityId, 2, dt)
+        Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(CustId, 2, PriorityId, 2)
+        result += "~" + Convert.ToString(ShowCurrentOrFuture)
+        'Dim ShowCurrentOrFuture As Integer = GetCustomerWWDCD(CustId, QuestionTypeId, PriorityId, 1)
+        'If ShowCurrentOrFuture > 0 Then
+        '    result = GetFSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        'ElseIf ShowCurrentOrFuture < 0 Then
+        '    result = GetCSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        'ElseIf ShowCurrentOrFuture = 0 Then
+        '    result = GetCSImpactChoice(CustId, QuestionTypeId, PriorityId, 1, dt)
+        '    result += "~" + GetCSBenefitChoice(CustId, 4, PriorityId, 1, dt)
+        'End If
+        Return result
+    End Function
+    'Public Shared Function GetCSCurrentChoiceEdit(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+    '    Dim objPriorityProcessor As New PriorityProcessor()
+    '    objPriorityProcessor.GetCSCurrentChoiceEdit(customerID, questionType, priorityID, VMType, dt)
+
+    '    Dim priorityHtml As New StringBuilder()
+    '    For i As Integer = 0 To dt.Rows.Count - 1
+    '        If i Mod 2 = 0 Then
+    '            priorityHtml.Append("<div class='col-md-6'>").Append("<button type='button' class='btn-default' style='width: 109% !important;padding:20px!important;' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>").Append("</div>")
+    '        Else
+    '            priorityHtml.Append("<div class='col-md-6' style=margin-left:-13px;>").Append("<button type='button' class='btn-default' style='width: 108%!important; padding:20px!important;' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>").Append("</div>")
+
+    '        End If
+    '    Next
+    '    Return priorityHtml.ToString()
+    'End Function
+    Public Shared Function GetCSCurrentChoiceEdit(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSCurrentChoiceEdit(customerID, questionType, priorityID, VMType, dt)
+        Dim priorityHtml As New StringBuilder()
+        For i As Integer = 0 To dt.Rows.Count - 1
+            If i Mod 2 = 0 Then
+                priorityHtml.Append("<div class='btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>")
+            Else
+                priorityHtml.Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("CS") & "'>" & dt.Rows(i)("CS") & "</button>").Append("</div>")
+            End If
+        Next
+        Return priorityHtml.ToString()
+    End Function
+
+    'Public Shared Function GetCSFutureChoiceEdit(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+    '    Dim objPriorityProcessor As New PriorityProcessor()
+    '    objPriorityProcessor.GetCSFutureChoicesEdit(customerID, questionType, priorityID, VMType, dt)
+
+    '    Dim priorityHtml As New StringBuilder()
+    '    For i As Integer = 0 To dt.Rows.Count - 1
+    '        If i Mod 2 = 0 Then
+    '            priorityHtml.Append("<div class='col-md-6'>").Append("<button type='button' style='width:109% !important; padding:20px!important;' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+    '        Else
+    '            priorityHtml.Append("<div class='col-md-6' style='margin-left:-13px;'>").Append("<button type='button' style='width:108% !important; padding:20px!important;' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+    '        End If
+
+    '    Next
+    '    Return priorityHtml.ToString()
+    'End Function
+    Public Shared Function GetCSFutureChoiceEdit(ByVal customerID As Integer, ByVal questionType As Integer, ByVal priorityID As Integer, ByVal VMType As Integer, ByRef dt As DataTable) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        objPriorityProcessor.GetCSFutureChoicesEdit(customerID, questionType, priorityID, VMType, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        For i As Integer = 0 To dt.Rows.Count - 1
+            If i Mod 2 = 0 Then
+                priorityHtml.Append("<div class='btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>")
+            Else
+                priorityHtml.Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+            End If
+
+        Next
+        Return priorityHtml.ToString()
+    End Function
+
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetValueMapScore(ByVal customerID As Integer, ByVal questionTypeID As Integer, ByVal priorityID As Integer) As String
+        'major changes in this function to reflect allowing canadian zips
+        'check version 102 for the logic that has been deleted
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim dt As New DataTable()
+        objPriorityProcessor.GetValueMapScore(customerID, questionTypeID, priorityID, dt)
+        If dt.Rows.Count = 0 Then
+            Return ""
+        Else
+            'Return dt.Rows(0)("MatchScore") & "~" & HttpContext.Current.Server.UrlEncode(dt.Rows(0)("Note"))
+            Return dt.Rows(0)("Score")
+        End If
+    End Function
+    <System.Web.Services.WebMethod()>
+    Public Shared Function InsertValueMapScore(ByVal customerID As Integer, ByVal questionTypeID As Integer, ByVal priorityID As Integer, ByVal score As Integer) As String
+        'major changes in this function to reflect allowing canadian zips
+        'check version 102 for the logic that has been deleted
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim result As Integer = 0
+        Dim dt As New DataTable()
+        result = objPriorityProcessor.InsertValueMapScore(customerID, questionTypeID, priorityID, score)
+        If result > 1 Then
+            Return "success"
+        Else
+            Return "fail"
+        End If
+
+
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function DeleteAllCustomerPriority(ByVal customerID As Integer) As String
+        'major changes in this function to reflect allowing canadian zips
+        'check version 102 for the logic that has been deleted
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim dt As New DataTable()
+        objPriorityProcessor.DeleteAllCustomerPriority(customerID)
+        Return "success"
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetCustomerPriorityChoices(ByVal customerID As Integer, ByVal priorityID As Integer, ByVal questionTypeID As Integer) As String
+        'major changes in this function to reflect allowing canadian zips
+        'check version 102 for the logic that has been deleted
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim dt As New DataTable()
+        objPriorityProcessor.GetCustomerPriortityChoices(customerID, questionTypeID, priorityID, dt)
+        Dim result As String = String.Empty
+        If dt.Rows.Count > 0 Then
+            For i As Integer = 0 To dt.Rows.Count - 1
+                result = result & dt.Rows(i)("Answer") & "~"
+            Next
+            result = result.TrimEnd("~")
+        End If
+        Return result
+    End Function
+
+    <System.Web.Services.WebMethod()> Public Shared Function GetCustomerPriorityIdeal(ByVal customerID As Integer, ByVal priorityID As Integer, ByVal questionType As Integer) As String
+        ' Return ""
+        Dim dt As New DataTable()
+        Dim objPriorityProcessor As New PriorityProcessor()
+
+        objPriorityProcessor.GetCSFutureChoices(customerID, 3, priorityID, 2, dt)
+
+        Dim priorityHtml As New StringBuilder()
+        For i As Integer = 0 To dt.Rows.Count - 1
+            priorityHtml.Append("<div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='" & dt.Rows(i)("FS") & "'>" & dt.Rows(i)("FS") & "</button>").Append("</div>")
+        Next
+        'If dt.Rows.Count > 0 Then
+        'If rowCount Mod 4 = 0 Then
+        '    priorityHtml.Append("<div class='col-md-3></div><div class='col-md-3></div><div class='col-md-3></div><div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='btnOther'>" & "Other" & "</button>").Append("</div>")
+        'Else
+        priorityHtml.Append("<div class='col-md-3 btns'>").Append("<button type='button' class='btn-default' id='" & "btnOther" & "'>" & "Other" & "</button>").Append("</div>")
+        'End If
+        'End If
+        Return priorityHtml.ToString()
+        'If result > 0 Then
+        '    Return "success"
+        'Else
+        '    Return "fail"
+        'End If
+    End Function
+    <System.Web.Services.WebMethod()> Public Shared Function GetValueMapChoicesByQuestionId(ByVal customerID As Integer, ByVal priorityID As Integer, ByVal questionType As Integer) As String
+        ' Return ""
+        Dim dt As New DataTable()
+        Dim objPriorityProcessor As New PriorityProcessor()
+
+        objPriorityProcessor.GetValueMapChoicesByQuestionId(customerID, questionType, priorityID, dt)
+        Dim result As String = String.Empty
+
+        For i As Integer = 0 To dt.Rows.Count - 1
+            result &= dt.Rows(i)("Answer") & "!"
+        Next
+        Return result
+        'If result > 0 Then
+        '    Return "success"
+        'Else
+        '    Return "fail"
+        'End If
+    End Function
+    Public Function LoadAllPropertyDetails(ByVal custId As Integer) As DataTable
+        Dim objPropertyProcessor As New PropertyProcessor()
+        Dim dtProperty As New DataTable
+        objPropertyProcessor.GetAllPropertyDetailsByCustomer(custId, True, dtProperty)
+        Return dtProperty
+    End Function
+
+    Public Sub BindPropertyEvaluationStatus(ByVal custId As Integer)
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim count As Integer = objPriorityProcessor.GetPropertyEvaluationStatus(custId)
+        If count > 0 Then
+            btnVmReview.Style.Add("display", "none")
+
+        End If
+    End Sub
+
+    Public Function CheckValueMapStatusByCustomer(ByVal custId As Integer) As String
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim dt As New DataTable()
+        objPriorityProcessor.CheckValueMapStatusByCustomer(custId, dt)
+        Dim result As String = String.Empty
+        If dt.Rows.Count > 0 Then
+            result = dt.Rows(0)(0)
+
+        End If
+        Return result
+    End Function
+
+    Public Function GetUserProfileInfo(ByVal userID As Integer) As String
+        Dim objUserProcessor As New UserProcessor()
+        Dim dt As New DataTable()
+        Dim result As String = String.Empty
+        Try
+            objUserProcessor.GetUserProfileInfo(userID, dt)
+            If dt.Rows.Count > 0 Then
+                result = dt.Rows(0)("FirstName") & " " & dt.Rows(0)("LastName")
+            End If
+        Catch ex As Exception
+
+        End Try
+
+        Return result
+    End Function
+
+    Protected Sub btnRealtorEmail_Click(sender As Object, e As EventArgs)
+        Dim valueMapStatus As String = CheckValueMapStatusByCustomer(hidCustId.Value)
+        If Not valueMapStatus.ToLower <> "completed" Then
+            Dim objCustomerProcessor As New CustomerProcessor()
+            Dim objUserProcessor As New UserProcessor()
+            Dim dtCustomer As New DataTable
+            Dim customerId As Integer = Request.QueryString("cid")
+            Dim userId As Integer = Request.QueryString("uid")
+            objCustomerProcessor.GetContactInfoByUser(userId, customerId, dtCustomer)
+            Dim dtUser As New DataTable
+            objUserProcessor.GetUserProfileInfo(userId, dtUser)
+            Dim subject As String = "Value Map Submitted by " & Convert.ToString(dtCustomer.Rows(0)("FirstName")) & " " & Convert.ToString(dtCustomer.Rows(0)("LastName"))
+            If Not String.IsNullOrEmpty(Convert.ToString(dtCustomer.Rows(0)("SecondaryFirstName"))) Then
+                subject = subject & " and " & Convert.ToString(dtCustomer.Rows(0)("SecondaryFirstName")) & " " & Convert.ToString(dtCustomer.Rows(0)("SecondaryLastName"))
+            End If
+            Dim body As String = System.IO.File.ReadAllText(Server.MapPath("~/CustomFiles/VMLinkBodyRealtor.html"))
+            body = body.Replace("$realtorName$", dtUser.Rows(0)("FirstName"))
+            'body = body.Replace("$realtorEmail$", dtUser.Rows(0)("EmailId"))
+            Dim customerName As String = Convert.ToString(dtCustomer.Rows(0)("FirstName"))
+            If Not String.IsNullOrEmpty(Convert.ToString(dtCustomer.Rows(0)("LastName"))) Then
+                customerName &= " " & Convert.ToString(dtCustomer.Rows(0)("LastName"))
+            End If
+            body = body.Replace("$customerName$", customerName)
+            Dim fromAddress As String = "ValueDesk@yourvaluestory.com"
+            Dim senderEmail As String = "valuedesk@yourvaluestory.com"
+            If String.IsNullOrEmpty(fromAddress) Then
+                fromAddress = "valuedesk@yourvaluestory.com"
+                senderEmail = ""
+            End If
+            'Case 1630
+            senderEmail = ""
+            fromAddress = "ValueDesk@yourvaluestory.com"
+            'End case
+            'Dim success As Boolean = Config.SendMail(lblCustomerEmail.InnerText, "", fromAddress, subject, body, "",, senderEmail)
+            'Dim success As Boolean = Config.SendMail(Convert.ToString(dtUser.Rows(0)("EmailId")), "", "no-reply@ris.com", subject, body, "",, senderEmail)
+            Dim success As Boolean = Config.SendMail(Convert.ToString(dtUser.Rows(0)("EmailId")), "", fromAddress, subject, body, "",, senderEmail)
+            If success = True Then
+                Dim objPriorityProcessor As New PriorityProcessor()
+                UserProcessor.InsertUserActivity("value map", "was submitted to ", hidCustId.Value, userId)
+                objCustomerProcessor.UpdateVMCustomer(hidCustId.Value)
+
+            End If
+        End If
+        If Not String.IsNullOrEmpty(Request.QueryString("realtor")) Then
+            Dim url As String = Page.Request.RawUrl.ToLower().Trim().Replace("&realtor=1", "")
+            Response.Redirect(url, True)
+        Else
+            Response.Redirect(Page.Request.RawUrl, False)
+        End If
+
+    End Sub
+    Public Sub GetPriorityQuestionDisplayByCustomer(ByVal customerID As Integer)
+        Dim objPriorityProcessor As New PriorityProcessor()
+        Dim dt As New DataTable
+        objPriorityProcessor.GetPriorityQuestionDisplayByCustomerO(customerID, dt)
+        If dt.Rows.Count > 0 Then
+            hidValueMapStatus.Value = "old"
+            hidValueMapQuestionDisplay.Value = dt.Rows(0)("PriorityId") & "~" & dt.Rows(0)("QuestionTypeId") & "~" & dt.Rows(0)("Ranking")
+        Else
+            hidValueMapStatus.Value = "new"
+        End If
+    End Sub
+    Public Function LoadAllPropertyEvaluation(ByVal custId As Integer) As Integer
+        Dim objPropertyProcessor As New PropertyProcessor()
+        Return objPropertyProcessor.GetAllPropertyValueMapScore(custId)
+    End Function
+End Class

@@ -1,0 +1,53 @@
+﻿<div class="draghere">
+    <p id="$id$" class='font-weight-bold ranktitle'> Rank $rankvalue$</p>
+    <div id="$divid$" class='accordioncontent '>
+        <div class="card">
+            <div class="card-header ">
+                <a class="card-link collapsed" data-toggle="collapse" href="#collapse$id$">
+                    $PropertyName$ - Price$
+                </a>
+            </div>
+            <div id="collapse$id$" class="collapse hide" data-parent="#$divid$">
+                <div class="card-body dark">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <td class=''>Square Feet:</td>
+                                <td>$sqft$</td>
+                            </tr>
+                            <tr>
+                                <td class=''>Bedrooms:</td>
+                                <td>$bed$</td>
+                            </tr>
+                            <tr>
+                                <td class=''>Baths:</td>
+                                <td>$baths$</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class='propertybox mb-4'>
+        <div style="width: 245px;
+    height: 145px;
+    text-align: center;
+    display: table-cell;
+    vertical-align: middle;">
+            <img class="img-responsive" style="max-height:145px; max-width:245px;" src="$imgId$" />
+        </div>
+        <div class='description clearfix'>
+            <p class="streetaddress">
+                $Street$<br />
+                $City$, $State$ $zip$
+            </p>
+            <p>
+                <font style="color: #5addbe;font-size:16px; font-weight:bold;width:145px!important;float:left;">PERCEIVED VALUE SCORE:   $score$ </font><span class="float-right">Selected: <input type="checkbox" style="cursor:pointer;" $checked$ id="chk$id$" onclick="EvaluateProperty('$id$')" /></span>
+            </p>
+
+        </div>
+
+
+    </div>
+</div>

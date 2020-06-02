@@ -1,0 +1,52 @@
+﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="Login.Master.vb" Inherits="RIS.LoginMaster" %>
+
+<!DOCTYPE html>
+
+<html>
+<head runat="server">
+    <title></title>
+    <asp:ContentPlaceHolder ID="head" runat="server">
+
+       
+    </asp:ContentPlaceHolder>
+</head>
+<body id="page">
+    <nav class="navbar container">
+		
+		  <a class="navbar-brand" href="#"><img src='images/logo.png' alt='logo'></a>
+		  <form class="form-inline" action='addcontact.html' style="display:none;">
+			<i class="fa fa-search"></i>
+			<input class="form-control mr-3 px-4" type="text" placeholder="Search" aria-label="Search">
+			<button class="btn my-2 my-sm-0 px-3" id="btnMasterAddContact" type="submit"><i class="fa fa-plus"></i> Add Contact</button>
+		  </form>
+		
+    </nav>
+    <form id="form1" runat="server">
+       
+           
+          <div class="container" id='maincontainer'>
+                <div class="row">
+            <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+            </asp:ContentPlaceHolder>
+                    </div>
+              </div>
+                 
+       
+    </form>
+     <link href="css/styles.css" rel="stylesheet"  type="text/css" />
+     <script src="js/jquery-3.2.1.slim.min.js" ></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/reimagine.js"></script>
+     <style type="text/css">
+            .navbar div {
+    position: relative;
+}
+
+    .navbar div .fa-search {
+        position: absolute;
+        left: 6px;
+        top: 10px;
+    }
+        </style>
+</body>
+</html>

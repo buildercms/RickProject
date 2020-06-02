@@ -1,0 +1,256 @@
+﻿<%@ Master Language="VB" AutoEventWireup="false" CodeBehind="SiteCustomer.Master.vb" Inherits="RIS.SiteCustomer" %>
+
+<!DOCTYPE html>
+
+<html>
+<head runat="server">
+    <title>REIMAGINE SELLING</title>
+    <%--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">--%>
+    <link href="css/styles.css" rel="stylesheet" type="text/css" />
+
+    <%-- <script src="js/jquery-2.1.1.js"></script>--%>
+    <script src="js/jquery-3.2.1.slim.min.js"></script>
+    <script src="js/jquery-2.1.1.js"></script>
+    <%--<script src="js/jquery-1.4.1.min.js"></script>--%>
+
+
+    <%--  <script src="js/jquery-1.4.1.min.js"></script>--%>
+    <script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+    <link href="https://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/reimagine.js"></script>
+    <style type="text/css">
+        .navbar div {
+            position: relative;
+        }
+
+            .navbar div .fa-search {
+                position: absolute;
+                left: 6px;
+                top: 10px;
+            }
+    </style>
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body id="page">
+
+    <form id="form1" runat="server" autocomplete="off">
+        <nav class="navbar container">
+
+            <a class="navbar-brand" href="#">
+                <img src='images/Rislogo.png' alt='logo' onclick="javascript:window.location.href='home.aspx'"></a>
+            <div class="form-inline">
+                <%--<i class="fa fa-search"></i>
+			<input class="form-control mr-3 px-4" type="text" placeholder="Search" aria-label="Search">--%>
+                <%--<button class="btn my-2 my-sm-0 px-3" id="btnMasterAddContact" type="submit"><i class="fa fa-plus"></i> Add Contact</button>--%>
+                <input class="btn my-2 my-sm-0 px-3" id="btnMasterAddToDo" style="display: none; margin-right: 15px;" type="button" value='Add "To Do"' />
+            </div>
+
+        </nav>
+        
+        <div class="container" id='maincontainer'>
+            <div class="row">
+                <nav class="left">
+                 
+                    <div class="sidebar-sticky text-center">
+                     
+                    </div>
+                    <div class='valuemapselect col-md-12' style="display: none;">
+                        <div class='row'>
+                            <div class='col col1'>
+
+                                <div class='square'>
+                                </div>
+                                <div class='square'>
+                                </div>
+                                <div class='square'>
+                                </div>
+
+                            </div>
+                            <div class='col col2'>
+
+                                <div class='square selected'>
+                                </div>
+                                <div class='square'>
+                                </div>
+                                <div class='square'>
+                                </div>
+                            </div>
+                            <div class='col col3 text-center'>
+
+                                <div class='circle selected'>
+                                </div>
+                                <div class='circle selected '>
+                                </div>
+                                <div class='circle '>
+                                </div>
+                            </div>
+                            <div class='col col4'>
+
+                                <div class='square'>
+                                </div>
+                                <div class='square'>
+                                </div>
+                                <div class='square'>
+                                </div>
+                            </div>
+                            <div class='col col5 '>
+
+                                <div class='square selected'>
+                                </div>
+                                <div class='square'>
+                                </div>
+                                <div class='square'>
+                                </div>
+                            </div>
+                        </div>
+                        <p>2 of 12
+                            <br />
+                            Answers Completed</p>
+                    </div>
+                   <%-- <ul id='logout' class="nav flex-column">
+                        <li class="nav-item" style="padding:0.5rem 1rem;">
+                            <asp:LinkButton ID="LinkButton1" runat="server" OnClick="lnkLogout_Click"> <i class="fa fa-arrow-right"></i>Logout</asp:LinkButton>
+                        </li>
+                    </ul>--%>
+                </nav>
+
+                <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+                </asp:ContentPlaceHolder>
+
+            </div>
+        </div>
+        <div id="alertModal" class="modal fade" role="dialog" >
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content" >
+      <div class="modal-header" style="border-bottom:none!important;">
+      <%--  <button type="button" class="close" data-dismiss="modal">&times;</button>--%>
+      </div>
+      <div class="modal-body" style="padding-top:0px; padding-bottom:0px;">
+        <div class="row">
+            
+            <div class="col-md-12" >
+            <span id="lblAlertMessage"></span>
+        </div>
+      </div>
+         <div class="modal-footer" style="border-top:none; padding:0px">
+             <div class="col-md-6"></div>
+                                    <div class='col-md-6'>
+                                        <button type="button" class="btn float-right my-4 font-weight-bold" data-dismiss="modal">OK</button>
+                                        <%--<asp:Button ID="btnNextScore" data-dismiss="modal" CssClass="btn float-right my-4 font-weight-bold" runat="server" Text="Next" />--%>
+                                    </div>
+             </div>
+      
+    </div>
+
+  </div>
+</div>
+            </div>
+
+        <div id="confirmModal" class="modal fade" role="dialog" >
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content" >
+      <div class="modal-header" style="border-bottom:none!important;">
+      <%--  <button type="button" class="close" data-dismiss="modal">&times;</button>--%>
+      </div>
+      <div class="modal-body" style="padding-top:0px; padding-bottom:0px;">
+        <div class="row">
+            
+            <div class="col-md-12" >
+            <span id="lblconfirmMessage"></span>
+        </div>
+      </div>
+         <div class="modal-footer" style="border-top:none; padding:0px">
+             <div class="col-md-4"></div>
+                                    <div class='col-md-8'>
+                                        <button type="button" class="btn float-right my-4 font-weight-bold" data-dismiss="modal">Cancel</button>
+                                        <button type="button" class="btn float-right my-4 font-weight-bold" style="margin-right:10px;" id="btnConfirmOk">OK</button>
+                                        
+                                        <%--<asp:Button ID="btnNextScore" data-dismiss="modal" CssClass="btn float-right my-4 font-weight-bold" runat="server" Text="Next" />--%>
+                                    </div>
+             </div>
+      
+    </div>
+
+  </div>
+</div>
+            </div>
+    </form>
+
+    <script type="text/javascript">
+        function alertDialog(msg) {
+            $('#alertModal').modal('show');
+            $("#lblAlertMessage").html(msg);
+            return false;
+        }
+        function confirmDialog(msg) {
+             $('#confirmModal').modal('show');
+            $("#lblconfirmMessage").text(msg);
+          
+            return false;
+        }
+        $(function () {
+            $("#liSearchContact").click(function () {
+                $("#liViewSearchContact").toggle();
+            });
+
+
+            var url = window.location.href;
+            //alert(url.toLowerCase().indexOf("home.aspx"));
+            if (url.toLowerCase().indexOf("home.aspx") > -1) {
+                $("#home").css("background-color", "black !important");
+                //  $("#home").css("background-color", "#cecece !important");
+            }
+            else {
+                $("#home").css("background-color", "#cecece !important");
+            }
+          
+        })
+    </script>
+    <script type="text/javascript">
+        $(function () {
+            var browserURL = window.location.href;
+
+            $("ul[id$='ulSideBar']").find("li").each(function () {
+                $(this).removeClass("active");
+            });
+            if (browserURL.toLowerCase().indexOf("todo") > -1) {
+                $("ul[id$='ulSideBar']").find("li[id$='liTodo']").addClass("active")
+            }
+            if (browserURL.toLowerCase().indexOf("contact") > -1) {
+                $("ul[id$='ulSideBar']").find("li[id$='liContact']").addClass("active")
+            }
+            $(".btn").addClass("px-3")
+        });
+          $(function () {
+            // $(".csimpact p,.csdesc p").matchHeight();
+            var maxWidth = Math.max.apply(null, $("#btnMasterAddToDo").map(function () {
+                return $(this).outerWidth();
+              }).get());
+              //alert(maxWidth);
+              $(".btn").css("min-width",maxWidth);
+        });
+    </script>
+    <style type="text/css">
+        .btn {
+            font-weight: bold;
+        }
+        .items li {
+            display:grid !important;
+        }
+         textarea:focus, input:focus {
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: inherit;
+            -webkit-box-shadow: none;
+            box-shadow: none;
+               outline: none;
+        }
+    </style>
+</body>
+</html>
